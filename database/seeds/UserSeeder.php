@@ -1,0 +1,23 @@
+<?php
+
+use App\User;
+use Illuminate\Database\Seeder;
+
+class UserSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        factory(User::class, 1)->create([
+            'name'=>'Cristhian Vargas Quiroz',
+            'email'=>'cristhianingsis@gmail.com',
+            'password'=>bcrypt('Estudiaresimportante1995'),
+        ]);
+
+        factory(User::class, 4)->create();
+    }
+}
