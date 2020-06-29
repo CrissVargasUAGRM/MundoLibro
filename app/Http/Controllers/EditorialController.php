@@ -48,7 +48,7 @@ class EditorialController extends Controller
 
         $record = Editorial::create([
             'name' => $request->input('name'),
-            'fk_created_by' => 1,
+            'fk_created_by' => auth()->user()->id,
         ]);
 
         if($request->hasFile('image')){
@@ -105,7 +105,7 @@ class EditorialController extends Controller
 
         $editorial->update([
             'name'=>$request->input('name'),
-            'fk_updated_by'=>1,
+            'fk_updated_by'=>auth()->user()->id,
         ]);
 
         if($request->hasFile('image')){

@@ -53,7 +53,7 @@ class AuthorController extends Controller
 
         $record = Author::create([
             'name' => $request->input('name'),
-            'fk_created_by' => 1
+            'fk_created_by' => auth()->user()->id,
         ]);
         
         if($request->hasFile('avatar')){
@@ -111,7 +111,7 @@ class AuthorController extends Controller
  
         $author->update([
             'name' => $request->input('name'),
-            'fk_updated_by' => 1
+            'fk_updated_by' => auth()->user()->id,
         ]);
 
         if($request->hasFile('avatar')){

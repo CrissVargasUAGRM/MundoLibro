@@ -32,6 +32,6 @@ class PasswordRecovery extends Mailable
     {
         return $this->from('cristhianingsis@gmail.com')
         ->subject('Recuperacion de contraseña')
-        ->view('view.name');
+        ->view('recoveryPassword');
     }
 }
