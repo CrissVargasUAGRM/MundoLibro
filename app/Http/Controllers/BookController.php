@@ -40,7 +40,24 @@ class BookController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate([
+            'authors'=>'required|array',
+            'categories'=>'required|array',
+            'title'=>'required|unique:books,title',
+            'synopsis'=>'required|string',
+        ]);
+
+        $record = Book::create([
+            'fk_created_by' => auth()->user()->id,
+            'title' => $request->input('title'),
+            'synopsis' => $request->input('synopsis'),
+        ]);
+
+        //un libro tiene varios autores y varias categorias
+        $record->authors()->attach($request->input('authors'));
+        $record->categories()->attach($request->input('categories'));
+
+        return $record;
     }
 
     /**
@@ -49,9 +66,22 @@ class BookController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Book $book)
     {
-        //
+        return $book->load([
+            'authors' => function($query){
+                $query->select('authors.id','name');
+            },
+            'categories' => function($query){
+                $query->select('categories.id','name');
+            },
+            'createdBy' => function($query){
+                $query->select('id','name');
+            },
+            'updatedBy' => function($query){
+                $query->select('id','name');
+            },
+        ]);
     }
 
     /**
@@ -61,9 +91,24 @@ class BookController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Book $book)
     {
-        //
+        $request->validate([
+            'authors'=>'required|array',
+            'categories'=>'required|array',
+            'title'=>'required|unique:books,title,' . $book->id,
+            'synopsis'=>'required|string',
+        ]);
+        $book->update([
+            'fk_updated_by' => auth()->user()->id,
+            'title' => $request->input('title'),
+            'synopsis' => $request->input('synopsis'),
+        ]);
+
+        $book->authors()->attach($request->input('authors'));
+        $book->categories()->attach($request->input('categories'));
+
+        return $book;
     }
 
     /**
@@ -72,8 +117,14 @@ class BookController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Book $book)
     {
-        //
+        $book->formats()->each(function($format){
+            $format->delete();
+        });
+
+        $book->delete();
+
+        return response([],204);
     }
 }

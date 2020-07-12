@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Format;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class FormatController extends Controller
 {
@@ -11,9 +13,34 @@ class FormatController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        $records = Format::with([
+            'book'=>function($query){
+                $query->select('id','title');
+            },
+            'editorial'=>function($query){
+                $query->select('id','name');
+            },
+        ])
+        ->when($request->has('edition'),function($query) use ($request){
+            $query->where('edition','like','%'.$request->query('edition').'%');
+        })
+        ->when($request->has('book'),function($query) use ($request){
+            $query->where('fk_book',$request->query('book'));
+        })
+        ->when($request->has('editorial'),function($query) use ($request){
+            $query->where('fk_editorial',$request->query('editorial'));
+        })
+        ->get([
+            'id',
+            'fk_book',
+            'fk_editorial',
+            'edition',
+            'price',
+        ]);
+
+        return $records;
     }
 
     /**
@@ -24,7 +51,28 @@ class FormatController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request -> validate([
+            'edition' => 'required|string',
+            'price' => 'required|numeric',
+            'image' => 'nullable|image',
+            'fk_book' => 'required|exists:books,id',
+            'fk_editorial' => 'required|exists:editorials,id',
+        ]);
+
+        $record = Format::create([
+            'edition' => $request->input('edition'),
+            'price' => $request->input('price'),
+            'fk_book' => $request->input('fk_book'),
+            'fk_editorial' => $request->input('fk_editorial'),
+            'fk_created_by' => auth()->user()->id,
+        ]);
+
+        if($request->hasFile('image')){
+            $path = $request->file('image')->store('images/formats','public');
+            $record->update(['image'=>$path]);
+        }
+
+        return $record;
     }
 
     /**
@@ -33,9 +81,22 @@ class FormatController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Format $format)
     {
-        //
+        return $format->load([
+            'createdBy' => function($query){
+                $query->select('id','name');
+            },
+            'updatedBy' => function($query){
+                $query->select('id','name');
+            },
+            'book' => function($query){
+                $query->select('id','title');
+            },
+            'editorial' => function($query){
+                $query->select('id','name');
+            },
+        ]);
     }
 
     /**
@@ -45,9 +106,31 @@ class FormatController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Format $format)
     {
-        //
+        $request -> validate([
+            'edition' => 'required|string',
+            'price' => 'required|numeric',
+            'image' => 'nullable|image',
+            'fk_book' => 'required|exists:books,id',
+            'fk_editorial' => 'required|exists:editorials,id',
+        ]);
+
+        $format->update([
+            'edition' => $request->input('edition'),
+            'price' => $request->input('price'),
+            'fk_book' => $request->input('fk_book'),
+            'fk_editorial' => $request->input('fk_editorial'),
+            'fk_updated_by' => auth()->user()->id,
+        ]);
+
+        if($request->hasFile('image')){
+            Storage::disk('public')->delete($format->image);
+            $path = $request->file('image')->store('images/formats','public');
+            $format->update(['image'=>$path]);
+        }
+
+        return $format;
     }
 
     /**
@@ -56,8 +139,10 @@ class FormatController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Format $format)
     {
-        //
+        $format->delete();
+
+        return response([],204);
     }
 }
